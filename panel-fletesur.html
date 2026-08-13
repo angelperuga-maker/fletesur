@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FleteSur · Panel interno</title>
+<style>
+  :root{
+    --navy:#16264A;
+    --navy-deep:#0C1730;
+    --orange:#F4711F;
+    --paper:#E9EDF3;
+    --card:#FFFFFF;
+    --ink:#0F1A2E;
+    --muted:#5D6C86;
+    --line:#D5DDE8;
+    --green:#0F7A5A;
+    --red:#B23A17;
+    --mono: ui-monospace, "SF Mono", "Menlo", "Roboto Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 16px 80px}
+
+  /* ---------- Cabecera ---------- */
+  header.top{background:var(--navy);color:#fff}
+  .top-inner{max-width:1180px;margin:0 auto;padding:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .mark{
+    font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:15px;
+    display:flex;align-items:center;gap:9px;
+  }
+  .mark span.dot{width:11px;height:11px;background:var(--orange);border-radius:2px;transform:rotate(45deg);display:inline-block}
+  .mark small{font-weight:500;letter-spacing:.18em;opacity:.65;font-size:10px;margin-left:4px}
+  .top-inner .sp{flex:1}
+  .savestate{font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+
+  nav.tabs{background:var(--navy-deep);position:sticky;top:0;z-index:20}
+  .tabs-inner{max-width:1180px;margin:0 auto;padding:0 8px;display:flex;overflow-x:auto}
+  .tabs button{
+    background:none;border:0;color:#9FB0CC;font-family:var(--sans);font-size:12px;
+    letter-spacing:.13em;text-transform:uppercase;font-weight:600;
+    padding:14px 14px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;
+  }
+  .tabs button:hover{color:#fff}
+  .tabs button[aria-selected="true"]{color:#fff;border-bottom-color:var(--orange)}
+  .tabs button:focus-visible{outline:2px solid var(--orange);outline-offset:-4px}
+
+  /* ---------- Bloques ---------- */
+  .panel{display:none;padding-top:22px}
+  .panel.on{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+  .card + .card{margin-top:16px}
+  h2.sec{
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 12px;font-weight:700;
+  }
+  h3{font-size:16px;margin:0 0 4px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){
+    .cols{grid-template-columns:1fr 400px;align-items:start}
+  }
+
+  /* ---------- Indicadores ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(min-width:760px){.kpis{grid-template-columns:repeat(4,1fr)}}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 15px;position:relative;overflow:hidden}
+  .kpi .lab{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .kpi .val{font-family:var(--mono);font-size:24px;font-weight:600;margin-top:6px;letter-spacing:-.02em}
+  .kpi .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .kpi.venta{border-left:4px solid var(--navy)}
+  .kpi.gasto{border-left:4px solid var(--orange)}
+  .kpi.util{border-left:4px solid var(--green)}
+  .kpi.pend{border-left:4px solid #94A3B8}
+  .neg{color:var(--red)}
+  .pos{color:var(--green)}
+
+  /* ---------- Formularios ---------- */
+  label.f{display:block;margin-bottom:12px}
+  label.f > span{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:5px}
+  input[type=text],input[type=number],input[type=date],input[type=tel],select,textarea{
+    width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:7px;
+    font-family:var(--sans);font-size:15px;background:#fff;color:var(--ink)
+  }
+  input[inputmode=numeric],input[type=number]{font-family:var(--mono)}
+  textarea{min-height:64px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--orange);outline-offset:1px;border-color:var(--orange)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:620px){.row3{grid-template-columns:1fr 1fr}}
+  .checks{display:grid;gap:8px}
+  .chk{
+    display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;
+    padding:10px 12px;cursor:pointer;background:#fff
+  }
+  .chk:has(input:checked){border-color:var(--orange);background:#FFF6EF}
+  .chk input{width:18px;height:18px;accent-color:var(--orange);flex:none}
+  .chk .nm{flex:1;font-size:14px}
+  .chk .amt{font-family:var(--mono);font-size:13px;color:var(--muted)}
+
+  button.act{
+    border:0;border-radius:8px;padding:12px 16px;font-weight:700;font-size:14px;
+    cursor:pointer;font-family:var(--sans)
+  }
+  .b-primary{background:var(--orange);color:#fff}
+  .b-navy{background:var(--navy);color:#fff}
+  .b-ghost{background:#fff;color:var(--navy);border:1px solid var(--line)!important}
+  button.act:hover{filter:brightness(1.07)}
+  button.act:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+
+  /* ---------- Carta de porte (cotización viva) ---------- */
+  .porte{
+    background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;
+    position:sticky;top:60px;
+  }
+  .porte .head{background:var(--navy);color:#fff;padding:13px 16px}
+  .porte .head .t{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.7;font-weight:700}
+  .porte .head .r{font-family:var(--mono);font-size:14px;margin-top:3px}
+  .porte .body{padding:14px 16px}
+  .ledger{list-style:none;margin:0;padding:0}
+  .ledger li{display:flex;align-items:baseline;gap:6px;padding:6px 0;font-size:14px}
+  .ledger li .n{color:var(--ink)}
+  .ledger li .lead{flex:1;border-bottom:1px dotted var(--line);transform:translateY(-4px)}
+  .ledger li .v{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .ledger li.dim{color:var(--muted)}
+  .cut{border-top:2px dashed var(--line);margin:10px 0}
+  .totals li{padding:5px 0}
+  .totals li.grand{
+    font-size:19px;font-weight:800;padding-top:12px;margin-top:6px;border-top:2px solid var(--navy)
+  }
+  .totals li.grand .v{color:var(--navy)}
+  .badge-iva{font-size:11px;color:var(--muted);letter-spacing:.06em}
+
+  /* ---------- Listas ---------- */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{
+    text-align:left;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+    border-bottom:1px solid var(--line);padding:8px 8px 8px 0;font-weight:700
+  }
+  td{padding:11px 8px 11px 0;border-bottom:1px solid #EEF1F6;vertical-align:top}
+  td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;padding-right:0}
+  .est{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;padding:3px 7px;border-radius:20px;display:inline-block}
+  .est.pendiente{background:#EEF2F8;color:#4A5A78}
+  .est.venta{background:#E4F4EE;color:var(--green)}
+  .est.perdida{background:#F6ECEA;color:var(--red)}
+  .mini{background:none;border:1px solid var(--line);border-radius:6px;padding:5px 9px;font-size:12px;cursor:pointer;color:var(--navy);margin:2px 4px 2px 0;font-family:var(--sans)}
+  .mini:hover{background:#F4F7FB}
+  .mini.danger{color:var(--red)}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .filters button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 13px;font-size:12px;cursor:pointer;font-weight:600;color:var(--muted);font-family:var(--sans)}
+  .filters button[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .empty{padding:26px 4px;color:var(--muted);font-size:14px}
+  .empty b{color:var(--ink);display:block;margin-bottom:3px}
+
+  /* ---------- Gráfico ---------- */
+  .chart{width:100%;height:190px;display:block}
+  .legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:8px}
+  .legend i{width:10px;height:10px;display:inline-block;border-radius:2px;margin-right:6px}
+  .catbar{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}
+  .catbar .nm{width:130px;flex:none;color:var(--muted)}
+  .catbar .track{flex:1;height:9px;background:#EEF2F7;border-radius:6px;overflow:hidden}
+  .catbar .fill{height:100%;background:var(--orange);border-radius:6px}
+  .catbar .v{font-family:var(--mono);font-size:12px;width:92px;text-align:right}
+
+  .monthpick{display:flex;align-items:center;gap:8px}
+  .monthpick input{width:auto}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+    background:var(--navy-deep);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;
+    opacity:0;pointer-events:none;transition:.22s;z-index:99;box-shadow:0 8px 24px rgba(12,23,48,.3)
+  }
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="mark"><span class="dot"></span>FleteSur <small>Panel interno</small></div>
+    <div class="sp"></div>
+    <div class="savestate" id="savestate">Cargando…</div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tabs-inner" role="tablist">
+    <button role="tab" data-tab="panel" aria-selected="true">Resumen</button>
+    <button role="tab" data-tab="cotizar" aria-selected="false">Cotizar</button>
+    <button role="tab" data-tab="trabajos" aria-selected="false">Cotizaciones y ventas</button>
+    <button role="tab" data-tab="gastos" aria-selected="false">Gastos</button>
+    <button role="tab" data-tab="ajustes" aria-selected="false">Tarifas</button>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- ============ RESUMEN ============ -->
+  <section class="panel on" id="tab-panel">
+    <div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div class="monthpick">
+        <label class="f" style="margin:0"><span>Mes</span><input type="month" id="mes"></label>
+      </div>
+      <div class="sp" style="flex:1"></div>
+      <button class="act b-ghost" id="csvBtn">Descargar respaldo (CSV)</button>
+    </div>
+
+    <div class="kpis" style="margin-top:16px">
+      <div class="kpi venta"><div class="lab">Ventas del mes</div><div class="val" id="k-ventas">$0</div><div class="sub" id="k-ventas-sub">neto, sin IVA</div></div>
+      <div class="kpi gasto"><div class="lab">Gastos del mes</div><div class="val" id="k-gastos">$0</div><div class="sub" id="k-gastos-sub">0 registros</div></div>
+      <div class="kpi util"><div class="lab">Utilidad</div><div class="val" id="k-util">$0</div><div class="sub" id="k-util-sub">margen 0%</div></div>
+      <div class="kpi pend"><div class="lab">Por cerrar</div><div class="val" id="k-pend">$0</div><div class="sub" id="k-pend-sub">0 cotizaciones</div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2 class="sec">Últimos 6 meses</h2>
+      <svg class="chart" id="chart" viewBox="0 0 600 190" preserveAspectRatio="none" role="img" aria-label="Ventas y gastos de los últimos seis meses"></svg>
+      <div class="legend">
+        <span><i style="background:#16264A"></i>Ventas netas</span>
+        <span><i style="background:#F4711F"></i>Gastos</span>
+      </div>
+    </div>
+
+    <div class="grid cols" style="margin-top:16px">
+      <div class="card">
+        <h2 class="sec">Gastos del mes por categoría</h2>
+        <div id="catlist"></div>
+      </div>
+      <div class="card">
+        <h2 class="sec">Impuestos del mes</h2>
+        <ul class="ledger">
+          <li><span class="n">IVA cobrado en ventas</span><span class="lead"></span><span class="v" id="k-iva">$0</span></li>
+          <li class="dim"><span class="n">Ventas con IVA incluido</span><span class="lead"></span><span class="v" id="k-bruto">$0</span></li>
+          <li class="dim"><span class="n">Viajes facturados</span><span class="lead"></span><span class="v" id="k-viajes">0</span></li>
+          <li class="dim"><span class="n">Kilómetros recorridos</span><span class="lead"></span><span class="v" id="k-km">0</span></li>
+        </ul>
+        <p class="hint">El IVA cobrado no es tuyo: se declara. La utilidad de arriba usa siempre el monto neto.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COTIZAR ============ -->
+  <section class="panel" id="tab-cotizar">
+    <div class="grid cols">
+      <div>
+        <div class="card">
+          <h2 class="sec">Cliente</h2>
+          <div class="row2">
+            <label class="f"><span>Nombre</span><input type="text" id="c-cliente" placeholder="Nombre o empresa"></label>
+            <label class="f"><span>WhatsApp</span><input type="tel" id="c-fono" placeholder="9 1234 5678"></label>
+          </div>
+          <div class="row2">
+            <label class="f"><span>RUT (opcional)</span><input type="text" id="c-rut" placeholder="12.345.678-9"></label>
+            <label class="f"><span>Fecha del servicio</span><input type="date" id="c-fecha"></label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="sec">Viaje</h2>
+          <div class="row2">
+            <label class="f"><span>Origen</span><input type="text" id="c-origen" placeholder="Valdivia"></label>
+            <label class="f"><span>Destino</span><input type="text" id="c-destino" placeholder="Puerto Montt"></label>
+          </div>
+          <div class="row3">
+            <label class="f"><span>Kilómetros</span><input type="number" id="c-km" min="0" step="1" placeholder="0"></label>
+            <label class="f"><span>Tipo de carga</span>
+              <select id="c-tipo">
+                <option>Mudanza</option><option>Lancha</option><option>Foodtruck</option>
+                <option>Tractor o maquinaria</option><option>Materiales de construcción</option>
+                <option>Faena forestal</option><option>Palets</option><option>Insumos agrícolas</option><option>Otro</option>
+              </select>
+            </label>
+            <label class="f"><span>Peso aprox. (kg)</span><input type="number" id="c-peso" min="0" step="100" placeholder="0"></label>
+          </div>
+          <label class="chk" style="margin-bottom:12px">
+            <input type="checkbox" id="c-ida"><span class="nm">Ida y vuelta cargado — cobra el doble de kilómetros</span>
+          </label>
+          <h2 class="sec">Recargos</h2>
+          <div class="checks" id="c-recargos"></div>
+          <label class="f" style="margin-top:14px"><span>Ajuste manual (neto, puede ser negativo)</span><input type="text" inputmode="numeric" id="c-ajuste" placeholder="0"></label>
+          <label class="f"><span>Notas internas</span><textarea id="c-notas" placeholder="Condiciones, horarios, contacto en destino…"></textarea></label>
+        </div>
+      </div>
+
+      <div>
+        <div class="porte">
+          <div class="head">
+            <div class="t">Cotización</div>
+            <div class="r" id="p-ruta">Origen → Destino</div>
+          </div>
+          <div class="body">
+            <ul class="ledger" id="p-lineas"></ul>
+            <div class="cut"></div>
+            <ul class="ledger totals">
+              <li><span class="n">Neto</span><span class="lead"></span><span class="v" id="p-neto">$0</span></li>
+              <li class="dim"><span class="n">IVA <span class="badge-iva" id="p-ivapct">19%</span></span><span class="lead"></span><span class="v" id="p-iva">$0</span></li>
+              <li class="grand"><span class="n">Total</span><span class="lead"></span><span class="v" id="p-total">$0</span></li>
+            </ul>
+            <div class="btnrow">
+              <button class="act b-primary" id="guardarBtn" style="flex:1">Guardar cotización</button>
+            </div>
+            <div class="btnrow">
+              <button class="act b-navy" id="waBtn" style="flex:1">Enviar por WhatsApp</button>
+              <button class="act b-ghost" id="copyBtn">Copiar</button>
+            </div>
+            <div class="btnrow" id="cancelRow" style="display:none">
+              <button class="act b-ghost" id="cancelBtn" style="flex:1">Cancelar edición</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRABAJOS ============ -->
+  <section class="panel" id="tab-trabajos">
+    <div class="card">
+      <div class="filters" id="filtros">
+        <button data-f="todas" aria-pressed="true">Todas</button>
+        <button data-f="pendiente" aria-pressed="false">Pendientes</button>
+        <button data-f="venta" aria-pressed="false">Ventas</button>
+        <button data-f="perdida" aria-pressed="false">Perdidas</button>
+      </div>
+      <div id="listaTrabajos"></div>
+    </div>
+  </section>
+
+  <!-- ============ GASTOS ============ -->
+  <section class="panel" id="tab-gastos">
+    <div class="grid cols">
+      <div class="card">
+        <h2 class="sec">Gastos registrados</h2>
+        <div id="listaGastos"></div>
+      </div>
+      <div class="card">
+        <h2 class="sec">Anotar gasto</h2>
+        <label class="f"><span>Fecha</span><input type="date" id="g-fecha"></label>
+        <label class="f"><span>Categoría</span>
+          <select id="g-cat">
+            <option>Petróleo</option><option>Peajes</option><option>Barcazas</option>
+            <option>Mantención</option><option>Neumáticos</option><option>Seguros</option>
+            <option>Permisos y patentes</option><option>Sueldos y pionetas</option><option>Otros</option>
+          </select>
+        </label>
+        <label class="f"><span>Detalle</span><input type="text" id="g-det" placeholder="Copec Paillaco, 60 litros"></label>
+        <label class="f"><span>Monto pagado</span><input type="text" inputmode="numeric" id="g-monto" placeholder="0"></label>
+        <button class="act b-primary" id="gastoBtn" style="width:100%">Guardar gasto</button>
+        <p class="hint">Registra el monto total pagado, con IVA incluido.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AJUSTES ============ -->
+  <section class="panel" id="tab-ajustes">
+    <div class="grid cols">
+      <div class="card">
+        <h2 class="sec">Tarifa</h2>
+        <div class="row2">
+          <label class="f"><span>Valor base por viaje</span><input type="text" inputmode="numeric" id="s-base"></label>
+          <label class="f"><span>Valor por kilómetro</span><input type="text" inputmode="numeric" id="s-km"></label>
+        </div>
+        <label class="f" style="max-width:180px"><span>IVA %</span><input type="number" id="s-iva" step="0.5"></label>
+
+        <h2 class="sec" style="margin-top:18px">Recargos</h2>
+        <div class="row2">
+          <label class="f"><span>Caminos de ripio / 4x4</span><input type="text" inputmode="numeric" id="s-r1"></label>
+          <label class="f"><span>Barcaza o ferry</span><input type="text" inputmode="numeric" id="s-r2"></label>
+        </div>
+        <div class="row2">
+          <label class="f"><span>Pioneta (ayudante)</span><input type="text" inputmode="numeric" id="s-r3"></label>
+          <label class="f"><span>Carga y descarga</span><input type="text" inputmode="numeric" id="s-r4"></label>
+        </div>
+        <button class="act b-primary" id="ajustesBtn">Guardar tarifas</button>
+        <p class="hint">Los montos de recargo vienen con valores de ejemplo. Cámbialos por los tuyos: se aplican a toda cotización nueva.</p>
+      </div>
+
+      <div class="card">
+        <h2 class="sec">Datos que salen en el mensaje</h2>
+        <label class="f"><span>Nombre que firma</span><input type="text" id="s-firma"></label>
+        <label class="f"><span>Teléfono de contacto</span><input type="text" id="s-fono"></label>
+        <label class="f"><span>Correo</span><input type="text" id="s-mail"></label>
+        <label class="f"><span>Validez de la cotización (días)</span><input type="number" id="s-validez" min="1"></label>
+        <button class="act b-primary" id="ajustes2Btn">Guardar datos</button>
+        <p class="hint">Todo se guarda en este dispositivo, dentro de tu cuenta. Nadie más ve estos datos. Descarga el respaldo CSV de vez en cuando desde la pestaña Resumen.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   Estado
+   ========================================================= */
+const KEY = 'fletesur-panel-v1';
+const DEF = {
+  config:{
+    base:90000, km:1400, iva:19,
+    r1:45000, r2:60000, r3:40000, r4:50000,
+    firma:'FleteSur', fono:'+56 9 6350 2977', mail:'cotizaciones@fletesur.cl', validez:15
+  },
+  cotizaciones:[], gastos:[]
+};
+let S = JSON.parse(JSON.stringify(DEF));
+let editandoId = null;
+let filtro = 'todas';
+
+const RECARGOS = [
+  {k:'r1', nm:'Caminos de ripio / terreno 4x4'},
+  {k:'r2', nm:'Barcaza o ferry'},
+  {k:'r3', nm:'Pioneta (ayudante)'},
+  {k:'r4', nm:'Servicio de carga y descarga'}
+];
+
+/* =========================================================
+   Utilidades
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const clp = n => '$' + Math.round(n||0).toLocaleString('es-CL');
+const soloNum = s => {
+  const neg = String(s).trim().startsWith('-');
+  const d = String(s).replace(/[^\d]/g,'');
+  return (neg?-1:1) * (parseInt(d||'0',10));
+};
+const hoyISO = () => new Date().toISOString().slice(0,10);
+const mesDe = iso => (iso||'').slice(0,7);
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id'+Date.now()+Math.random().toString(16).slice(2));
+const fechaCorta = iso => {
+  if(!iso) return '—';
+  const [a,m,d] = iso.split('-');
+  return `${d}-${m}-${a.slice(2)}`;
+};
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('on'), 2200);
+}
+
+/* =========================================================
+   Guardado
+   ========================================================= */
+async function cargar(){
+  try{
+    const r = await window.storage.get(KEY);
+    if(r && r.value){
+      const d = JSON.parse(r.value);
+      S = {config:{...DEF.config, ...(d.config||{})}, cotizaciones:d.cotizaciones||[], gastos:d.gastos||[]};
+    }
+    $('savestate').textContent = 'Datos guardados';
+  }catch(e){
+    $('savestate').textContent = 'Sin datos previos';
+  }
+}
+let guardando = false;
+async function guardar(){
+  if(guardando) return;
+  guardando = true;
+  $('savestate').textContent = 'Guardando…';
+  try{
+    await window.storage.set(KEY, JSON.stringify(S));
+    $('savestate').textContent = 'Datos guardados';
+  }catch(e){
+    $('savestate').textContent = 'No se pudo guardar';
+    toast('No se pudo guardar. Reintenta.');
+  }
+  guardando = false;
+}
+
+/* =========================================================
+   Cálculo de la cotización
+   ========================================================= */
+function leerForm(){
+  const km = Math.max(0, parseInt($('c-km').value||'0',10));
+  const ida = $('c-ida').checked;
+  const rec = {};
+  RECARGOS.forEach(r => rec[r.k] = $('chk-'+r.k) ? $('chk-'+r.k).checked : false);
+  return {
+    cliente:$('c-cliente').value.trim(), fono:$('c-fono').value.trim(), rut:$('c-rut').value.trim(),
+    fecha:$('c-fecha').value || hoyISO(),
+    origen:$('c-origen').value.trim(), destino:$('c-destino').value.trim(),
+    km, ida, tipo:$('c-tipo').value, peso:parseInt($('c-peso').value||'0',10),
+    rec, ajuste:soloNum($('c-ajuste').value), notas:$('c-notas').value.trim()
+  };
+}
+
+function calcular(d, cfg){
+  cfg = cfg || S.config;
+  const kmCobrados = d.ida ? d.km*2 : d.km;
+  const lineas = [
+    {nm:'Valor base del viaje', v:cfg.base},
+    {nm:`${kmCobrados.toLocaleString('es-CL')} km × ${clp(cfg.km)}`, v:kmCobrados*cfg.km}
+  ];
+  RECARGOS.forEach(r=>{ if(d.rec && d.rec[r.k]) lineas.push({nm:r.nm, v:cfg[r.k]}); });
+  if(d.ajuste) lineas.push({nm:'Ajuste', v:d.ajuste});
+  const neto = lineas.reduce((a,b)=>a+b.v,0);
+  const iva = Math.round(neto * cfg.iva/100);
+  return {kmCobrados, lineas, neto, iva, total:neto+iva};
+}
+
+function pintarPorte(){
+  const d = leerForm();
+  const c = calcular(d);
+  $('p-ruta').textContent = (d.origen||'Origen') + '  →  ' + (d.destino||'Destino');
+  $('p-lineas').innerHTML = c.lineas.map(l =>
+    `<li><span class="n">${l.nm}</span><span class="lead"></span><span class="v">${clp(l.v)}</span></li>`
+  ).join('');
+  $('p-neto').textContent = clp(c.neto);
+  $('p-iva').textContent = clp(c.iva);
+  $('p-ivapct').textContent = S.config.iva + '%';
+  $('p-total').textContent = clp(c.total);
+}
+
+function textoCotizacion(d){
+  const c = calcular(d);
+  const L = [];
+  L.push(`*Cotización de flete — ${S.config.firma}*`);
+  L.push('');
+  if(d.cliente) L.push(`Cliente: ${d.cliente}`);
+  L.push(`Ruta: ${d.origen||'—'} → ${d.destino||'—'}${d.ida?' (ida y vuelta)':''}`);
+  L.push(`Distancia: ${c.kmCobrados.toLocaleString('es-CL')} km`);
+  L.push(`Carga: ${d.tipo}${d.peso?` · ${d.peso.toLocaleString('es-CL')} kg`:''}`);
+  if(d.fecha) L.push(`Fecha estimada: ${fechaCorta(d.fecha)}`);
+  L.push('');
+  c.lineas.forEach(l => L.push(`• ${l.nm}: ${clp(l.v)}`));
+  L.push('');
+  L.push(`Neto: ${clp(c.neto)}`);
+  L.push(`IVA ${S.config.iva}%: ${clp(c.iva)}`);
+  L.push(`*TOTAL: ${clp(c.total)}*`);
+  L.push('');
+  L.push(`Valores válidos por ${S.config.validez} días. Incluye traslado puerta a puerta con camioneta 4x4 y carro de arrastre.`);
+  L.push(`${S.config.fono} · ${S.config.mail}`);
+  return L.join('\n');
+}
+
+function fonoWa(f){
+  let n = String(f||'').replace(/[^\d]/g,'');
+  if(!n) return '';
+  if(n.length === 8) n = '9' + n;
+  if(n.length === 9) n = '56' + n;
+  return n;
+}
+
+/* =========================================================
+   Guardar / editar cotizaciones
+   ========================================================= */
+function guardarCotizacion(){
+  const d = leerForm();
+  if(!d.km && !d.origen && !d.destino){ toast('Falta la ruta o los kilómetros.'); return; }
+  const c = calcular(d);
+  if(editandoId){
+    const i = S.cotizaciones.findIndex(x=>x.id===editandoId);
+    if(i>-1) S.cotizaciones[i] = {...S.cotizaciones[i], ...d, neto:c.neto, iva:c.iva, total:c.total, kmCobrados:c.kmCobrados};
+    toast('Cotización actualizada');
+  }else{
+    S.cotizaciones.unshift({
+      id:uid(), creada:hoyISO(), estado:'pendiente', fechaVenta:null,
+      ...d, neto:c.neto, iva:c.iva, total:c.total, kmCobrados:c.kmCobrados
+    });
+    toast('Cotización guardada');
+  }
+  guardar(); limpiarForm(); render();
+}
+
+function limpiarForm(){
+  ['c-cliente','c-fono','c-rut','c-origen','c-destino','c-km','c-peso','c-ajuste','c-notas'].forEach(i=>$(i).value='');
+  $('c-ida').checked = false;
+  RECARGOS.forEach(r=>{ if($('chk-'+r.k)) $('chk-'+r.k).checked = false; });
+  $('c-fecha').value = hoyISO();
+  editandoId = null;
+  $('guardarBtn').textContent = 'Guardar cotización';
+  $('cancelRow').style.display = 'none';
+  pintarPorte();
+}
+
+function editar(id){
+  const q = S.cotizaciones.find(x=>x.id===id); if(!q) return;
+  $('c-cliente').value=q.cliente||''; $('c-fono').value=q.fono||''; $('c-rut').value=q.rut||'';
+  $('c-fecha').value=q.fecha||hoyISO(); $('c-origen').value=q.origen||''; $('c-destino').value=q.destino||'';
+  $('c-km').value=q.km||''; $('c-tipo').value=q.tipo||'Mudanza'; $('c-peso').value=q.peso||'';
+  $('c-ida').checked=!!q.ida; $('c-ajuste').value=q.ajuste?String(q.ajuste):''; $('c-notas').value=q.notas||'';
+  RECARGOS.forEach(r=>{ if($('chk-'+r.k)) $('chk-'+r.k).checked = !!(q.rec&&q.rec[r.k]); });
+  editandoId = id;
+  $('guardarBtn').textContent = 'Actualizar cotización';
+  $('cancelRow').style.display = 'flex';
+  irA('cotizar'); pintarPorte();
+  window.scrollTo({top:0});
+}
+
+function cambiarEstado(id, estado){
+  const q = S.cotizaciones.find(x=>x.id===id); if(!q) return;
+  q.estado = estado;
+  q.fechaVenta = (estado==='venta') ? (q.fechaVenta || q.fecha || hoyISO()) : null;
+  guardar(); render();
+  toast(estado==='venta' ? 'Registrada como venta' : estado==='perdida' ? 'Marcada como perdida' : 'Vuelve a pendiente');
+}
+
+function borrarCot(id){
+  if(!confirm('¿Borrar esta cotización? No se puede deshacer.')) return;
+  S.cotizaciones = S.cotizaciones.filter(x=>x.id!==id);
+  guardar(); render(); toast('Cotización borrada');
+}
+
+function enviarWa(q){
+  const d = q || leerForm();
+  const txt = encodeURIComponent(textoCotizacion(d));
+  const n = fonoWa(d.fono);
+  window.open(n ? `https://wa.me/${n}?text=${txt}` : `https://wa.me/?text=${txt}`, '_blank');
+}
+
+/* =========================================================
+   Gastos
+   ========================================================= */
+function guardarGasto(){
+  const monto = soloNum($('g-monto').value);
+  if(!monto){ toast('Falta el monto del gasto.'); return; }
+  S.gastos.unshift({
+    id:uid(), fecha:$('g-fecha').value||hoyISO(), cat:$('g-cat').value,
+    det:$('g-det').value.trim(), monto
+  });
+  $('g-det').value=''; $('g-monto').value='';
+  guardar(); render(); toast('Gasto guardado');
+}
+function borrarGasto(id){
+  S.gastos = S.gastos.filter(x=>x.id!==id);
+  guardar(); render(); toast('Gasto borrado');
+}
+
+/* =========================================================
+   Render de listas
+   ========================================================= */
+function render(){ renderTrabajos(); renderGastos(); renderResumen(); }
+
+function renderTrabajos(){
+  const lista = S.cotizaciones.filter(q => filtro==='todas' ? true : q.estado===filtro);
+  const box = $('listaTrabajos');
+  if(!lista.length){
+    box.innerHTML = `<div class="empty"><b>Todavía no hay nada aquí.</b>Arma una cotización en la pestaña Cotizar y aparecerá en esta lista.</div>`;
+    return;
+  }
+  box.innerHTML = `<table><thead><tr>
+      <th>Fecha</th><th>Cliente y ruta</th><th class="num">Neto</th><th class="num">Total</th><th>Estado</th><th></th>
+    </tr></thead><tbody>` +
+    lista.map(q=>`<tr>
+      <td>${fechaCorta(q.fechaVenta||q.fecha)}</td>
+      <td><strong>${q.cliente||'Sin nombre'}</strong><br>
+        <span style="color:var(--muted);font-size:13px">${q.origen||'—'} → ${q.destino||'—'} · ${(q.kmCobrados||0).toLocaleString('es-CL')} km · ${q.tipo||''}</span></td>
+      <td class="num">${clp(q.neto)}</td>
+      <td class="num"><strong>${clp(q.total)}</strong></td>
+      <td><span class="est ${q.estado}">${q.estado}</span></td>
+      <td style="white-space:nowrap">
+        ${q.estado!=='venta' ? `<button class="mini" data-act="venta" data-id="${q.id}">Es venta</button>`:''}
+        ${q.estado==='pendiente' ? `<button class="mini" data-act="perdida" data-id="${q.id}">Perdida</button>`:''}
+        ${q.estado!=='pendiente' ? `<button class="mini" data-act="pendiente" data-id="${q.id}">Pendiente</button>`:''}
+        <button class="mini" data-act="wa" data-id="${q.id}">WhatsApp</button>
+        <button class="mini" data-act="edit" data-id="${q.id}">Editar</button>
+        <button class="mini danger" data-act="del" data-id="${q.id}">Borrar</button>
+      </td></tr>`).join('') + '</tbody></table>';
+}
+
+function renderGastos(){
+  const box = $('listaGastos');
+  const mes = $('mes').value;
+  const lista = S.gastos.filter(g => mesDe(g.fecha)===mes);
+  if(!lista.length){
+    box.innerHTML = `<div class="empty"><b>Sin gastos en ${nombreMes(mes)}.</b>Anota el primero en el formulario de al lado.</div>`;
+    return;
+  }
+  const tot = lista.reduce((a,b)=>a+b.monto,0);
+  box.innerHTML = `<p class="hint" style="margin:0 0 10px">${nombreMes(mes)} · ${lista.length} registros · <strong style="color:var(--ink)">${clp(tot)}</strong></p>
+    <table><thead><tr><th>Fecha</th><th>Categoría</th><th>Detalle</th><th class="num">Monto</th><th></th></tr></thead><tbody>` +
+    lista.map(g=>`<tr>
+      <td>${fechaCorta(g.fecha)}</td><td>${g.cat}</td>
+      <td style="color:var(--muted)">${g.det||'—'}</td>
+      <td class="num">${clp(g.monto)}</td>
+      <td><button class="mini danger" data-gdel="${g.id}">Borrar</button></td>
+    </tr>`).join('') + '</tbody></table>';
+}
+
+function nombreMes(m){
+  if(!m) return '';
+  const [a,mm] = m.split('-');
+  return MESES[parseInt(mm,10)-1] + ' ' + a;
+}
+
+/* =========================================================
+   Resumen
+   ========================================================= */
+function totalesMes(mes){
+  const ventas = S.cotizaciones.filter(q=>q.estado==='venta' && mesDe(q.fechaVenta||q.fecha)===mes);
+  const gastos = S.gastos.filter(g=>mesDe(g.fecha)===mes);
+  return {
+    ventas,
+    gastos,
+    neto: ventas.reduce((a,b)=>a+b.neto,0),
+    iva: ventas.reduce((a,b)=>a+b.iva,0),
+    bruto: ventas.reduce((a,b)=>a+b.total,0),
+    km: ventas.reduce((a,b)=>a+(b.kmCobrados||0),0),
+    gasto: gastos.reduce((a,b)=>a+b.monto,0)
+  };
+}
+
+function renderResumen(){
+  const mes = $('mes').value;
+  const t = totalesMes(mes);
+  const util = t.neto - t.gasto;
+  const margen = t.neto ? Math.round(util/t.neto*100) : 0;
+
+  $('k-ventas').textContent = clp(t.neto);
+  $('k-ventas-sub').textContent = `${t.ventas.length} viajes · neto sin IVA`;
+  $('k-gastos').textContent = clp(t.gasto);
+  $('k-gastos-sub').textContent = `${t.gastos.length} registros`;
+  $('k-util').textContent = clp(util);
+  $('k-util').className = 'val ' + (util<0?'neg':util>0?'pos':'');
+  $('k-util-sub').textContent = `margen ${margen}%`;
+
+  const pend = S.cotizaciones.filter(q=>q.estado==='pendiente');
+  $('k-pend').textContent = clp(pend.reduce((a,b)=>a+b.total,0));
+  $('k-pend-sub').textContent = `${pend.length} cotizaciones sin cerrar`;
+
+  $('k-iva').textContent = clp(t.iva);
+  $('k-bruto').textContent = clp(t.bruto);
+  $('k-viajes').textContent = t.ventas.length;
+  $('k-km').textContent = t.km.toLocaleString('es-CL');
+
+  // Categorías
+  const porCat = {};
+  t.gastos.forEach(g => porCat[g.cat] = (porCat[g.cat]||0) + g.monto);
+  const cats = Object.entries(porCat).sort((a,b)=>b[1]-a[1]);
+  const max = cats.length ? cats[0][1] : 1;
+  $('catlist').innerHTML = cats.length
+    ? cats.map(([c,v])=>`<div class="catbar"><span class="nm">${c}</span>
+        <span class="track"><span class="fill" style="width:${Math.round(v/max*100)}%"></span></span>
+        <span class="v">${clp(v)}</span></div>`).join('')
+    : `<div class="empty"><b>Sin gastos este mes.</b>Cuando anotes gastos verás aquí en qué se te va la plata.</div>`;
+
+  dibujarChart(mes);
+}
+
+function dibujarChart(mes){
+  if(!mes) return;
+  const [ay,am] = mes.split('-').map(Number);
+  const meses = [];
+  for(let i=5;i>=0;i--){
+    const d = new Date(ay, am-1-i, 1);
+    meses.push({key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`, lab:MESES[d.getMonth()]});
+  }
+  const datos = meses.map(m=>{ const t = totalesMes(m.key); return {...m, v:t.neto, g:t.gasto}; });
+  const max = Math.max(1, ...datos.map(d=>Math.max(d.v,d.g)));
+  const W=600,H=190,padB=26,padT=10,gw=W/6;
+  let svg = `<line x1="0" y1="${H-padB}" x2="${W}" y2="${H-padB}" stroke="#D5DDE8" stroke-width="1"/>`;
+  datos.forEach((d,i)=>{
+    const x = i*gw, bw = gw*0.3, gap = gw*0.06;
+    const hv = (d.v/max)*(H-padB-padT), hg = (d.g/max)*(H-padB-padT);
+    const x1 = x + gw/2 - bw - gap/2, x2 = x + gw/2 + gap/2;
+    svg += `<rect x="${x1}" y="${H-padB-hv}" width="${bw}" height="${hv}" fill="#16264A" rx="2"/>`;
+    svg += `<rect x="${x2}" y="${H-padB-hg}" width="${bw}" height="${hg}" fill="#F4711F" rx="2"/>`;
+    svg += `<text x="${x+gw/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="#5D6C86" font-family="system-ui">${d.lab}</text>`;
+  });
+  $('chart').innerHTML = svg;
+}
+
+/* =========================================================
+   CSV
+   ========================================================= */
+function descargarCSV(){
+  const esc = s => `"${String(s??'').replace(/"/g,'""')}"`;
+  let out = 'TIPO,FECHA,ESTADO,CLIENTE,ORIGEN,DESTINO,KM,CATEGORIA,DETALLE,NETO,IVA,TOTAL\n';
+  S.cotizaciones.forEach(q=>{
+    out += ['Cotizacion', q.fechaVenta||q.fecha, q.estado, q.cliente, q.origen, q.destino, q.kmCobrados||0, q.tipo, q.notas, q.neto, q.iva, q.total].map(esc).join(',')+'\n';
+  });
+  S.gastos.forEach(g=>{
+    out += ['Gasto', g.fecha, '', '', '', '', '', g.cat, g.det, '', '', -g.monto].map(esc).join(',')+'\n';
+  });
+  const blob = new Blob(['\ufeff'+out], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `fletesur-respaldo-${hoyISO()}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Respaldo descargado');
+}
+
+/* =========================================================
+   Pestañas y arranque
+   ========================================================= */
+function irA(t){
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected', String(b.dataset.tab===t)));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on', p.id==='tab-'+t));
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click', ()=>irA(b.dataset.tab)));
+
+function pintarRecargos(){
+  $('c-recargos').innerHTML = RECARGOS.map(r=>
+    `<label class="chk"><input type="checkbox" id="chk-${r.k}">
+      <span class="nm">${r.nm}</span><span class="amt">+${clp(S.config[r.k])}</span></label>`).join('');
+  RECARGOS.forEach(r=>$('chk-'+r.k).addEventListener('change', pintarPorte));
+}
+
+function cargarAjustes(){
+  const c = S.config;
+  $('s-base').value = c.base.toLocaleString('es-CL');
+  $('s-km').value = c.km.toLocaleString('es-CL');
+  $('s-iva').value = c.iva;
+  RECARGOS.forEach(r=>$('s-'+r.k).value = c[r.k].toLocaleString('es-CL'));
+  $('s-firma').value = c.firma; $('s-fono').value = c.fono; $('s-mail').value = c.mail; $('s-validez').value = c.validez;
+}
+
+function guardarAjustes(){
+  S.config.base = soloNum($('s-base').value);
+  S.config.km = soloNum($('s-km').value);
+  S.config.iva = parseFloat($('s-iva').value||'19');
+  RECARGOS.forEach(r=>S.config[r.k] = soloNum($('s-'+r.k).value));
+  guardar(); cargarAjustes(); pintarRecargos(); pintarPorte();
+  toast('Tarifas actualizadas');
+}
+function guardarDatos(){
+  S.config.firma = $('s-firma').value.trim();
+  S.config.fono = $('s-fono').value.trim();
+  S.config.mail = $('s-mail').value.trim();
+  S.config.validez = parseInt($('s-validez').value||'15',10);
+  guardar(); toast('Datos actualizados');
+}
+
+/* Eventos */
+['c-km','c-ajuste','c-origen','c-destino'].forEach(i=>$(i).addEventListener('input', pintarPorte));
+$('c-ida').addEventListener('change', pintarPorte);
+$('guardarBtn').addEventListener('click', guardarCotizacion);
+$('cancelBtn').addEventListener('click', ()=>{limpiarForm(); toast('Edición cancelada');});
+$('waBtn').addEventListener('click', ()=>enviarWa(null));
+$('copyBtn').addEventListener('click', async ()=>{
+  try{ await navigator.clipboard.writeText(textoCotizacion(leerForm())); toast('Texto copiado'); }
+  catch(e){ toast('No se pudo copiar en este navegador'); }
+});
+$('gastoBtn').addEventListener('click', guardarGasto);
+$('ajustesBtn').addEventListener('click', guardarAjustes);
+$('ajustes2Btn').addEventListener('click', guardarDatos);
+$('csvBtn').addEventListener('click', descargarCSV);
+$('mes').addEventListener('change', ()=>{renderGastos(); renderResumen();});
+
+$('filtros').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  filtro = b.dataset.f;
+  document.querySelectorAll('#filtros button').forEach(x=>x.setAttribute('aria-pressed', String(x.dataset.f===filtro)));
+  renderTrabajos();
+});
+
+$('listaTrabajos').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-act]'); if(!b) return;
+  const id = b.dataset.id, a = b.dataset.act;
+  if(a==='edit') editar(id);
+  else if(a==='del') borrarCot(id);
+  else if(a==='wa') enviarWa(S.cotizaciones.find(x=>x.id===id));
+  else cambiarEstado(id, a);
+});
+$('listaGastos').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-gdel]'); if(!b) return;
+  borrarGasto(b.dataset.gdel);
+});
+
+(async function init(){
+  await cargar();
+  $('mes').value = hoyISO().slice(0,7);
+  $('c-fecha').value = hoyISO();
+  $('g-fecha').value = hoyISO();
+  pintarRecargos(); cargarAjustes(); pintarPorte(); render();
+})();
+</script>
+</body>
+</html>
