@@ -118,10 +118,16 @@
   .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
 
   /* ---------- Carta de porte (cotización viva) ---------- */
-  .porte{
-    background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;
-    position:sticky;top:60px;
-  }
+  .porte{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .costbox{margin-top:16px;padding:14px;background:#F6F8FB;border:1px solid var(--line);border-radius:8px}
+  .costhead{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:6px}
+  .costbox .ledger li{font-size:13px;padding:4px 0}
+  .costbox .totals li.grand{font-size:17px;border-top-color:var(--green)}
+  .costbox .totals li.grand .v{color:var(--green)}
+  .costbox .totals li.grand.malo .v{color:var(--red)}
+  .margenbar{height:8px;background:#E3E9F1;border-radius:6px;overflow:hidden;margin-top:10px}
+  .margenbar span{display:block;height:100%;background:var(--green);width:0;border-radius:6px;transition:width .2s}
+  .margenbar span.malo{background:var(--red)}
   .porte .head{background:var(--navy);color:#fff;padding:13px 16px}
   .porte .head .t{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.7;font-weight:700}
   .porte .head .r{font-family:var(--mono);font-size:14px;margin-top:3px}
@@ -243,8 +249,9 @@
           <li class="dim"><span class="n">Ventas con IVA incluido</span><span class="lead"></span><span class="v" id="k-bruto">$0</span></li>
           <li class="dim"><span class="n">Viajes facturados</span><span class="lead"></span><span class="v" id="k-viajes">0</span></li>
           <li class="dim"><span class="n">Kilómetros recorridos</span><span class="lead"></span><span class="v" id="k-km">0</span></li>
+          <li><span class="n">Costo estimado de esos viajes</span><span class="lead"></span><span class="v" id="k-costo">$0</span></li>
         </ul>
-        <p class="hint">El IVA cobrado no es tuyo: se declara. La utilidad de arriba usa siempre el monto neto.</p>
+        <p class="hint" id="k-desvio">El IVA cobrado no es tuyo: se declara. La utilidad de arriba usa siempre el monto neto.</p>
       </div>
     </div>
   </section>
@@ -290,6 +297,21 @@
           <label class="f" style="margin-top:14px"><span>Ajuste manual (neto, puede ser negativo)</span><input type="text" inputmode="numeric" id="c-ajuste" placeholder="0"></label>
           <label class="f"><span>Notas internas</span><textarea id="c-notas" placeholder="Condiciones, horarios, contacto en destino…"></textarea></label>
         </div>
+
+        <div class="card">
+          <h2 class="sec">Lo que te cuesta el viaje</h2>
+          <label class="f"><span>Consumo estimado</span><select id="co-consumo"></select></label>
+          <label class="chk" style="margin-bottom:12px">
+            <input type="checkbox" id="co-retorno" checked><span class="nm">Vuelve vacía — suma el diésel del regreso</span>
+          </label>
+          <div class="row3">
+            <label class="f"><span>Peajes (ida y vuelta)</span><input type="text" inputmode="numeric" id="co-peajes" placeholder="0"></label>
+            <label class="f"><span>Barcaza / ferry</span><input type="text" inputmode="numeric" id="co-barcaza" placeholder="0"></label>
+            <label class="f"><span>Días de pioneta</span><input type="number" id="co-dias" min="0" step="1" placeholder="0"></label>
+          </div>
+          <label class="f"><span>Otros costos (alojamiento, comida, ayudas)</span><input type="text" inputmode="numeric" id="co-otros" placeholder="0"></label>
+          <p class="hint">El desgaste por kilómetro (aceite, neumáticos, frenos, mantención) se agrega solo, según lo que fijes en Tarifas.</p>
+        </div>
       </div>
 
       <div>
@@ -306,6 +328,18 @@
               <li class="dim"><span class="n">IVA <span class="badge-iva" id="p-ivapct">19%</span></span><span class="lead"></span><span class="v" id="p-iva">$0</span></li>
               <li class="grand"><span class="n">Total</span><span class="lead"></span><span class="v" id="p-total">$0</span></li>
             </ul>
+
+            <div class="costbox">
+              <div class="costhead">Costo estimado del viaje</div>
+              <ul class="ledger" id="p-costos"></ul>
+              <ul class="ledger totals" style="margin-top:2px">
+                <li><span class="n">Costo total</span><span class="lead"></span><span class="v" id="p-costo">$0</span></li>
+                <li class="grand" style="font-size:17px"><span class="n">Te queda</span><span class="lead"></span><span class="v" id="p-margen">$0</span></li>
+              </ul>
+              <div class="margenbar"><span id="p-fill"></span></div>
+              <div class="hint" id="p-margentxt">Margen 0% · $0 por km</div>
+            </div>
+
             <div class="btnrow">
               <button class="act b-primary" id="guardarBtn" style="flex:1">Guardar cotización</button>
             </div>
@@ -385,6 +419,27 @@
       </div>
 
       <div class="card">
+        <h2 class="sec">Costos de operación</h2>
+        <div class="row2">
+          <label class="f"><span>Diésel por litro</span><input type="text" inputmode="numeric" id="s-diesel"></label>
+          <label class="f"><span>Desgaste por km</span><input type="text" inputmode="numeric" id="s-costokm"></label>
+        </div>
+        <label class="f"><span>Pago a pioneta por día</span><input type="text" inputmode="numeric" id="s-pioneta"></label>
+
+        <h2 class="sec" style="margin-top:18px">Consumo de la RAM 2500 (litros cada 100 km)</h2>
+        <div class="row2">
+          <label class="f"><span>Vacía o carga liviana</span><input type="number" step="0.5" id="s-c1"></label>
+          <label class="f"><span>Hasta 3 toneladas</span><input type="number" step="0.5" id="s-c2"></label>
+        </div>
+        <div class="row2">
+          <label class="f"><span>De 4 a 7 toneladas</span><input type="number" step="0.5" id="s-c3"></label>
+          <label class="f"><span>Máxima, ripio o cuestas</span><input type="number" step="0.5" id="s-c4"></label>
+        </div>
+        <button class="act b-primary" id="costosBtn">Guardar costos</button>
+        <p class="hint">Cuando lleves dos o tres meses de gastos anotados, divide el total de mantención y neumáticos por los km recorridos: ese es tu desgaste real por km.</p>
+      </div>
+
+      <div class="card">
         <h2 class="sec">Datos que salen en el mensaje</h2>
         <label class="f"><span>Nombre que firma</span><input type="text" id="s-firma"></label>
         <label class="f"><span>Teléfono de contacto</span><input type="text" id="s-fono"></label>
@@ -408,6 +463,8 @@ const DEF = {
   config:{
     base:90000, km:1400, iva:19,
     r1:45000, r2:60000, r3:40000, r4:50000,
+    diesel:1267, consVacio:12, c1:12, c2:16, c3:22, c4:28,
+    costoKm:200, pagoPioneta:60000,
     firma:'FleteSur', fono:'+56 9 6350 2977', mail:'cotizaciones@fletesur.cl', validez:15
   },
   cotizaciones:[], gastos:[]
@@ -421,6 +478,13 @@ const RECARGOS = [
   {k:'r2', nm:'Barcaza o ferry'},
   {k:'r3', nm:'Pioneta (ayudante)'},
   {k:'r4', nm:'Servicio de carga y descarga'}
+];
+
+const CONSUMOS = [
+  {k:'c1', nm:'Vacía o carga liviana, ruta pareja'},
+  {k:'c2', nm:'Carro cargado hasta 3 toneladas'},
+  {k:'c3', nm:'Carro cargado de 4 a 7 toneladas'},
+  {k:'c4', nm:'Carga máxima, ripio o cuestas'}
 ];
 
 /* =========================================================
@@ -491,8 +555,30 @@ function leerForm(){
     fecha:$('c-fecha').value || hoyISO(),
     origen:$('c-origen').value.trim(), destino:$('c-destino').value.trim(),
     km, ida, tipo:$('c-tipo').value, peso:parseInt($('c-peso').value||'0',10),
-    rec, ajuste:soloNum($('c-ajuste').value), notas:$('c-notas').value.trim()
+    rec, ajuste:soloNum($('c-ajuste').value), notas:$('c-notas').value.trim(),
+    consumo:parseFloat($('co-consumo').value||'22'),
+    retorno:$('co-retorno').checked,
+    peajes:soloNum($('co-peajes').value), barcaza:soloNum($('co-barcaza').value),
+    dias:parseInt($('co-dias').value||'0',10), otros:soloNum($('co-otros').value)
   };
+}
+
+function calcularCosto(d, cfg){
+  cfg = cfg || S.config;
+  const kmCargado = d.ida ? d.km*2 : d.km;
+  const kmVacio = (d.retorno && !d.ida) ? d.km : 0;
+  const kmTotal = kmCargado + kmVacio;
+  const cons = d.consumo || cfg.c3;
+  const litros = kmCargado*cons/100 + kmVacio*cfg.consVacio/100;
+  const lineas = [];
+  if(litros) lineas.push({nm:`Diésel · ${Math.round(litros)} L (${kmTotal.toLocaleString('es-CL')} km)`, v:litros*cfg.diesel});
+  if(kmTotal) lineas.push({nm:`Desgaste · ${clp(cfg.costoKm)}/km`, v:kmTotal*cfg.costoKm});
+  if(d.peajes) lineas.push({nm:'Peajes', v:d.peajes});
+  if(d.barcaza) lineas.push({nm:'Barcaza o ferry', v:d.barcaza});
+  if(d.dias) lineas.push({nm:`Pioneta · ${d.dias} ${d.dias===1?'día':'días'}`, v:d.dias*cfg.pagoPioneta});
+  if(d.otros) lineas.push({nm:'Otros costos', v:d.otros});
+  const total = lineas.reduce((a,b)=>a+b.v,0);
+  return {lineas, total, litros, kmTotal};
 }
 
 function calcular(d, cfg){
@@ -520,6 +606,22 @@ function pintarPorte(){
   $('p-iva').textContent = clp(c.iva);
   $('p-ivapct').textContent = S.config.iva + '%';
   $('p-total').textContent = clp(c.total);
+
+  const k = calcularCosto(d);
+  $('p-costos').innerHTML = k.lineas.length
+    ? k.lineas.map(l=>`<li class="dim"><span class="n">${l.nm}</span><span class="lead"></span><span class="v">${clp(l.v)}</span></li>`).join('')
+    : `<li class="dim"><span class="n">Ingresa los kilómetros para estimar</span></li>`;
+  $('p-costo').textContent = clp(k.total);
+  const margen = c.neto - k.total;
+  const pct = c.neto ? Math.round(margen/c.neto*100) : 0;
+  $('p-margen').textContent = clp(margen);
+  $('p-margen').parentElement.classList.toggle('malo', margen < 0);
+  const fill = $('p-fill');
+  fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+  fill.classList.toggle('malo', pct < 25);
+  const porKm = k.kmTotal ? Math.round(margen/k.kmTotal) : 0;
+  $('p-margentxt').textContent = `Margen ${pct}% · ${clp(porKm)} por km recorrido` +
+    (pct < 25 && c.neto ? ' · margen bajo para este viaje' : '');
 }
 
 function textoCotizacion(d){
@@ -559,14 +661,15 @@ function guardarCotizacion(){
   const d = leerForm();
   if(!d.km && !d.origen && !d.destino){ toast('Falta la ruta o los kilómetros.'); return; }
   const c = calcular(d);
+  const k = calcularCosto(d);
   if(editandoId){
     const i = S.cotizaciones.findIndex(x=>x.id===editandoId);
-    if(i>-1) S.cotizaciones[i] = {...S.cotizaciones[i], ...d, neto:c.neto, iva:c.iva, total:c.total, kmCobrados:c.kmCobrados};
+    if(i>-1) S.cotizaciones[i] = {...S.cotizaciones[i], ...d, neto:c.neto, iva:c.iva, total:c.total, kmCobrados:c.kmCobrados, costo:k.total};
     toast('Cotización actualizada');
   }else{
     S.cotizaciones.unshift({
       id:uid(), creada:hoyISO(), estado:'pendiente', fechaVenta:null,
-      ...d, neto:c.neto, iva:c.iva, total:c.total, kmCobrados:c.kmCobrados
+      ...d, neto:c.neto, iva:c.iva, total:c.total, kmCobrados:c.kmCobrados, costo:k.total
     });
     toast('Cotización guardada');
   }
@@ -574,8 +677,11 @@ function guardarCotizacion(){
 }
 
 function limpiarForm(){
-  ['c-cliente','c-fono','c-rut','c-origen','c-destino','c-km','c-peso','c-ajuste','c-notas'].forEach(i=>$(i).value='');
+  ['c-cliente','c-fono','c-rut','c-origen','c-destino','c-km','c-peso','c-ajuste','c-notas',
+   'co-peajes','co-barcaza','co-dias','co-otros'].forEach(i=>$(i).value='');
   $('c-ida').checked = false;
+  $('co-retorno').checked = true;
+  $('co-consumo').value = S.config.c3;
   RECARGOS.forEach(r=>{ if($('chk-'+r.k)) $('chk-'+r.k).checked = false; });
   $('c-fecha').value = hoyISO();
   editandoId = null;
@@ -591,6 +697,10 @@ function editar(id){
   $('c-km').value=q.km||''; $('c-tipo').value=q.tipo||'Mudanza'; $('c-peso').value=q.peso||'';
   $('c-ida').checked=!!q.ida; $('c-ajuste').value=q.ajuste?String(q.ajuste):''; $('c-notas').value=q.notas||'';
   RECARGOS.forEach(r=>{ if($('chk-'+r.k)) $('chk-'+r.k).checked = !!(q.rec&&q.rec[r.k]); });
+  $('co-consumo').value = q.consumo || S.config.c3;
+  $('co-retorno').checked = q.retorno !== false;
+  $('co-peajes').value = q.peajes || ''; $('co-barcaza').value = q.barcaza || '';
+  $('co-dias').value = q.dias || ''; $('co-otros').value = q.otros || '';
   editandoId = id;
   $('guardarBtn').textContent = 'Actualizar cotización';
   $('cancelRow').style.display = 'flex';
@@ -656,7 +766,7 @@ function renderTrabajos(){
       <td>${fechaCorta(q.fechaVenta||q.fecha)}</td>
       <td><strong>${q.cliente||'Sin nombre'}</strong><br>
         <span style="color:var(--muted);font-size:13px">${q.origen||'—'} → ${q.destino||'—'} · ${(q.kmCobrados||0).toLocaleString('es-CL')} km · ${q.tipo||''}</span></td>
-      <td class="num">${clp(q.neto)}</td>
+      <td class="num">${clp(q.neto)}<br><span style="font-size:11px;color:${(q.neto-(q.costo||0))<0?'var(--red)':'var(--muted)'}">deja ${clp(q.neto-(q.costo||0))}</span></td>
       <td class="num"><strong>${clp(q.total)}</strong></td>
       <td><span class="est ${q.estado}">${q.estado}</span></td>
       <td style="white-space:nowrap">
@@ -733,6 +843,16 @@ function renderResumen(){
   $('k-bruto').textContent = clp(t.bruto);
   $('k-viajes').textContent = t.ventas.length;
   $('k-km').textContent = t.km.toLocaleString('es-CL');
+  const costoEst = t.ventas.reduce((a,b)=>a+(b.costo||0),0);
+  $('k-costo').textContent = clp(costoEst);
+  if(costoEst && t.gasto){
+    const dif = t.gasto - costoEst;
+    $('k-desvio').textContent = dif > 0
+      ? `Gastaste ${clp(dif)} más de lo que estimaste. Si se repite, súbele el valor por km o el desgaste.`
+      : `Gastaste ${clp(-dif)} menos de lo estimado. Tus cálculos van con holgura.`;
+  }else{
+    $('k-desvio').textContent = 'El IVA cobrado no es tuyo: se declara. La utilidad de arriba usa siempre el monto neto.';
+  }
 
   // Categorías
   const porCat = {};
@@ -776,12 +896,12 @@ function dibujarChart(mes){
    ========================================================= */
 function descargarCSV(){
   const esc = s => `"${String(s??'').replace(/"/g,'""')}"`;
-  let out = 'TIPO,FECHA,ESTADO,CLIENTE,ORIGEN,DESTINO,KM,CATEGORIA,DETALLE,NETO,IVA,TOTAL\n';
+  let out = 'TIPO,FECHA,ESTADO,CLIENTE,ORIGEN,DESTINO,KM,CATEGORIA,DETALLE,NETO,IVA,TOTAL,COSTO_ESTIMADO\n';
   S.cotizaciones.forEach(q=>{
-    out += ['Cotizacion', q.fechaVenta||q.fecha, q.estado, q.cliente, q.origen, q.destino, q.kmCobrados||0, q.tipo, q.notas, q.neto, q.iva, q.total].map(esc).join(',')+'\n';
+    out += ['Cotizacion', q.fechaVenta||q.fecha, q.estado, q.cliente, q.origen, q.destino, q.kmCobrados||0, q.tipo, q.notas, q.neto, q.iva, q.total, q.costo||0].map(esc).join(',')+'\n';
   });
   S.gastos.forEach(g=>{
-    out += ['Gasto', g.fecha, '', '', '', '', '', g.cat, g.det, '', '', -g.monto].map(esc).join(',')+'\n';
+    out += ['Gasto', g.fecha, '', '', '', '', '', g.cat, g.det, '', '', -g.monto, ''].map(esc).join(',')+'\n';
   });
   const blob = new Blob(['\ufeff'+out], {type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
@@ -805,6 +925,11 @@ function pintarRecargos(){
     `<label class="chk"><input type="checkbox" id="chk-${r.k}">
       <span class="nm">${r.nm}</span><span class="amt">+${clp(S.config[r.k])}</span></label>`).join('');
   RECARGOS.forEach(r=>$('chk-'+r.k).addEventListener('change', pintarPorte));
+  const prev = $('co-consumo').value;
+  $('co-consumo').innerHTML = CONSUMOS.map(c=>
+    `<option value="${S.config[c.k]}">${c.nm} · ${S.config[c.k]} L/100 km</option>`).join('');
+  $('co-consumo').value = prev || S.config.c3;
+  if(!$('co-consumo').value) $('co-consumo').value = S.config.c3;
 }
 
 function cargarAjustes(){
@@ -814,6 +939,20 @@ function cargarAjustes(){
   $('s-iva').value = c.iva;
   RECARGOS.forEach(r=>$('s-'+r.k).value = c[r.k].toLocaleString('es-CL'));
   $('s-firma').value = c.firma; $('s-fono').value = c.fono; $('s-mail').value = c.mail; $('s-validez').value = c.validez;
+  $('s-diesel').value = c.diesel.toLocaleString('es-CL');
+  $('s-costokm').value = c.costoKm.toLocaleString('es-CL');
+  $('s-pioneta').value = c.pagoPioneta.toLocaleString('es-CL');
+  CONSUMOS.forEach(x=>$('s-'+x.k).value = c[x.k]);
+}
+
+function guardarCostos(){
+  S.config.diesel = soloNum($('s-diesel').value);
+  S.config.costoKm = soloNum($('s-costokm').value);
+  S.config.pagoPioneta = soloNum($('s-pioneta').value);
+  CONSUMOS.forEach(x=>S.config[x.k] = parseFloat($('s-'+x.k).value||'0'));
+  S.config.consVacio = S.config.c1;
+  guardar(); cargarAjustes(); pintarRecargos(); pintarPorte();
+  toast('Costos actualizados');
 }
 
 function guardarAjustes(){
@@ -834,7 +973,9 @@ function guardarDatos(){
 
 /* Eventos */
 ['c-km','c-ajuste','c-origen','c-destino'].forEach(i=>$(i).addEventListener('input', pintarPorte));
-$('c-ida').addEventListener('change', pintarPorte);
+['co-peajes','co-barcaza','co-dias','co-otros'].forEach(i=>$(i).addEventListener('input', pintarPorte));
+['c-ida','co-retorno','co-consumo'].forEach(i=>$(i).addEventListener('change', pintarPorte));
+$('costosBtn').addEventListener('click', guardarCostos);
 $('guardarBtn').addEventListener('click', guardarCotizacion);
 $('cancelBtn').addEventListener('click', ()=>{limpiarForm(); toast('Edición cancelada');});
 $('waBtn').addEventListener('click', ()=>enviarWa(null));
